@@ -3,8 +3,10 @@ import Login from './pages/Login';
 import Landingpage from './pages/Landingpage'; 
 import gsap from 'gsap';
 
-// ✅ DYNAMIC API BASE: Uses env var in production, localhost in dev
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// ✅ BOTH URLS: Production first, localhost fallback for local dev
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : 'https://i-edge-bsackend-4.onrender.com';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -33,13 +35,6 @@ function App() {
       alert('Cannot connect to backend server. Please check your connection.');
       setIsLoading(false);
     }
-  };
-
-  // ✅ FIXED: Explicitly used in JSX below to prevent TS6133 error
-  const handleLogout = () => {
-    localStorage.removeItem('iedge_token');
-    setIsAuthenticated(false);
-    window.location.reload();
   };
 
   // AUTO-REDIRECT ON TOKEN EXPIRY
@@ -93,15 +88,6 @@ function App() {
 
   return (
     <div ref={appRef} className="opacity-0 relative min-h-screen">
-      {/* ✅ ADDED LOGOUT BUTTON TO FIX UNUSED VARIABLE BUILD ERROR */}
-      <button 
-        type="button"
-        onClick={() => handleLogout()}
-        className="fixed top-4 right-4 z-[9999] px-4 py-2 text-xs font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-xl cursor-pointer transition-colors"
-      >
-        Logout
-      </button>
-      
       <Landingpage />
     </div>
   );
