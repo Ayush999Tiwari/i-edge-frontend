@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import  { useState, useEffect, useRef } from 'react';
 import Login from './pages/Login';
 import Landingpage from './pages/Landingpage'; 
 import gsap from 'gsap';
