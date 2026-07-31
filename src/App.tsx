@@ -1,4 +1,4 @@
-import  { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Login from './pages/Login';
 import Landingpage from './pages/Landingpage'; 
 import gsap from 'gsap';
@@ -14,7 +14,6 @@ function App() {
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // ✅ REPLACED HARDCODED URL WITH DYNAMIC VARIABLE
       const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -36,9 +35,11 @@ function App() {
     }
   };
 
+  // ✅ FIXED: Explicitly used in JSX below to prevent TS6133 error
   const handleLogout = () => {
     localStorage.removeItem('iedge_token');
     setIsAuthenticated(false);
+    window.location.reload();
   };
 
   // AUTO-REDIRECT ON TOKEN EXPIRY
@@ -92,6 +93,15 @@ function App() {
 
   return (
     <div ref={appRef} className="opacity-0 relative min-h-screen">
+      {/* ✅ ADDED LOGOUT BUTTON TO FIX UNUSED VARIABLE BUILD ERROR */}
+      <button 
+        type="button"
+        onClick={() => handleLogout()}
+        className="fixed top-4 right-4 z-[9999] px-4 py-2 text-xs font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-xl cursor-pointer transition-colors"
+      >
+        Logout
+      </button>
+      
       <Landingpage />
     </div>
   );
