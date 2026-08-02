@@ -33,7 +33,7 @@ function App() {
       }
     } catch (error: any) {
       // ✅ UPDATED: Ab actual error message bhi dikhega
-      alert(`Cannot connect to backend server: ${error.message }`);
+      alert(`{error.message }`);
       setIsLoading(false);
     }
   };
