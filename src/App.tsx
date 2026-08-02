@@ -33,7 +33,7 @@ function App() {
       }
     } catch (error: any) {
       // ✅ UPDATED: Ab actual error message bhi dikhega
-      alert(`{error.message }`);
+      alert(`${error.message }`);
       setIsLoading(false);
     }
   };
