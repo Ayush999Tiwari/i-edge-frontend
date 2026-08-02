@@ -69,15 +69,15 @@ export default function PremiumLogin({ onLogin, isLoading }: LoginProps) {
     return () => ctx.revert();
   }, []);
 
-  // Card slot height = login card height minus the heading block above it, so the left
-  // column (heading + slideshow) never runs taller than the login card on the right.
+  // Card slot height = login card height minus the heading block below it, so the left
+  // column's total (cards + heading) lands exactly at the login card's height — no leftover space.
   useEffect(() => {
     const measure = () => {
       if (loginCardRef.current && headingBlockRef.current) {
         const total = loginCardRef.current.offsetHeight;
         const headingH = headingBlockRef.current.offsetHeight;
-        const gap = 20;
-        setCardStackHeight(Math.max(180, total - headingH - gap));
+        const gap = 24; // matches the space-y-6 gap between the two blocks
+        setCardStackHeight(Math.max(160, total - headingH - gap));
       }
     };
     measure();
@@ -153,44 +153,12 @@ export default function PremiumLogin({ onLogin, isLoading }: LoginProps) {
       </nav>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 lg:py-24">
-        <div className="grid lg:grid-cols-2 gap-20 items-start">
-          <div ref={heroRef} className="space-y-6">
+        <div ref={heroRef} className="grid lg:grid-cols-2 gap-20 items-start">
 
-            {/* Headline + supporting copy — back on TOP, compacted so the column fits within the login card's height */}
-            <div ref={headingBlockRef} className="space-y-3 max-w-xl overflow-hidden">
-              <p className="reveal-text text-xs font-medium text-[#6B6B6B] uppercase tracking-[0.2em] font-sans">Why Choose i-Edge?</p>
-              <h2 className="reveal-text text-3xl lg:text-4xl font-bold text-[#2D2D2D] leading-[1.15]" style={{ fontFamily: 'Cinzel, serif', textShadow: '2px 2px 0 #ccc, 4px 4px 0 #bbb, 6px 6px 10px rgba(0,0,0,0.15)' }}>
-                Smart AI Vision for Modern Businesses
-              </h2>
-              <p className="reveal-text text-sm text-[#6B6B6B] leading-relaxed font-sans">
-                Automate your daily operations, track inventory, and secure your facilities. Our AI cameras do the hard work so you can focus on growing your business.
-              </p>
+          {/* LEFT: slideshow cards on top, heading text right below — total height matches the login card */}
+          <div className="space-y-6">
 
-              <div className="flex items-center gap-8 overflow-hidden font-sans pt-1">
-                <div className="reveal-text">
-                  <div className="text-2xl font-bold text-[#2D2D2D]" style={{ fontFamily: 'Cinzel, serif' }}>12M+</div>
-                  <div className="text-xs text-[#6B6B6B] mt-0.5">Items Tracked Daily</div>
-                </div>
-                <div className="reveal-text w-px h-8 bg-[#D0D0D0]" />
-                <div className="reveal-text">
-                  <div className="text-2xl font-bold text-[#2D2D2D]" style={{ fontFamily: 'Cinzel, serif' }}>99.9%</div>
-                  <div className="text-xs text-[#6B6B6B] mt-0.5">Detection Accuracy</div>
-                </div>
-                <div className="reveal-text w-px h-8 bg-[#D0D0D0]" />
-                <div className="reveal-text">
-                  <div className="text-2xl font-bold text-[#2D2D2D]" style={{ fontFamily: 'Cinzel, serif' }}>24/7</div>
-                  <div className="text-xs text-[#6B6B6B] mt-0.5">Active Monitoring</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 font-sans pt-1">
-                <button className="px-5 py-2.5 rounded-full bg-[#2D2D2D] text-[#F5F5F0] font-medium text-xs">See How It Works</button>
-                <button className="px-5 py-2.5 rounded-full bg-transparent border border-[#2D2D2D] text-[#2D2D2D] font-medium text-xs">Talk to Sales</button>
-              </div>
-            </div>
-
-            {/* CARD SLIDESHOW — sits right below the heading, height auto-fits the remaining space so it never pushes past the login card */}
-            <div className="space-y-3 -mt-2">
+            <div className="space-y-3">
               <div className="reveal-text inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2D2D2D]/5 border border-[#2D2D2D]/10 w-fit">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-bold text-[#2D2D2D] uppercase tracking-[0.2em] font-sans">What We Do</span>
@@ -198,7 +166,7 @@ export default function PremiumLogin({ onLogin, isLoading }: LoginProps) {
 
               <div
                 ref={cardStackRef}
-                className="relative w-full max-w-xl"
+                className="relative w-full"
                 style={{ height: `${cardStackHeight}px`, perspective: '1200px' }}
               >
                 {SERVICES.map((service, index) => (
@@ -233,8 +201,41 @@ export default function PremiumLogin({ onLogin, isLoading }: LoginProps) {
                 ))}
               </div>
             </div>
+
+            <div ref={headingBlockRef} className="space-y-3 overflow-hidden">
+              <p className="reveal-text text-xs font-medium text-[#6B6B6B] uppercase tracking-[0.2em] font-sans">Why Choose i-Edge?</p>
+              <h2 className="reveal-text text-2xl lg:text-3xl font-bold text-[#2D2D2D] leading-[1.15]" style={{ fontFamily: 'Cinzel, serif', textShadow: '2px 2px 0 #ccc, 4px 4px 0 #bbb, 6px 6px 10px rgba(0,0,0,0.15)' }}>
+                Smart AI Vision for Modern Businesses
+              </h2>
+              <p className="reveal-text text-sm text-[#6B6B6B] leading-relaxed font-sans">
+                Automate your daily operations, track inventory, and secure your facilities. Our AI cameras do the hard work so you can focus on growing your business.
+              </p>
+
+              <div className="flex items-center gap-6 overflow-hidden font-sans pt-1">
+                <div className="reveal-text">
+                  <div className="text-xl font-bold text-[#2D2D2D]" style={{ fontFamily: 'Cinzel, serif' }}>12M+</div>
+                  <div className="text-[10px] text-[#6B6B6B] mt-0.5">Items Tracked Daily</div>
+                </div>
+                <div className="reveal-text w-px h-7 bg-[#D0D0D0]" />
+                <div className="reveal-text">
+                  <div className="text-xl font-bold text-[#2D2D2D]" style={{ fontFamily: 'Cinzel, serif' }}>99.9%</div>
+                  <div className="text-[10px] text-[#6B6B6B] mt-0.5">Detection Accuracy</div>
+                </div>
+                <div className="reveal-text w-px h-7 bg-[#D0D0D0]" />
+                <div className="reveal-text">
+                  <div className="text-xl font-bold text-[#2D2D2D]" style={{ fontFamily: 'Cinzel, serif' }}>24/7</div>
+                  <div className="text-[10px] text-[#6B6B6B] mt-0.5">Active Monitoring</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 font-sans pt-1">
+                <button className="px-5 py-2.5 rounded-full bg-[#2D2D2D] text-[#F5F5F0] font-medium text-xs whitespace-nowrap">See How It Works</button>
+                <button className="px-5 py-2.5 rounded-full bg-transparent border border-[#2D2D2D] text-[#2D2D2D] font-medium text-xs whitespace-nowrap">Talk to Sales</button>
+              </div>
+            </div>
           </div>
 
+          {/* RIGHT: login card */}
           <div className="relative">
             <div ref={loginCardRef} onMouseMove={handleCardMouseMove} className="relative p-10 rounded-[2rem] bg-white overflow-hidden group" style={{ boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.08)' }}>
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0" style={{ background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(45, 45, 45, 0.06), transparent 40%)` }} />
