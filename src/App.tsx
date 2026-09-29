@@ -37,7 +37,7 @@ const API_BASE =
         VITE_API_BASE_URL?: string;
       };
     }
-  ).env?.VITE_API_BASE_URL || 'http://localhost:3000';
+  ).env?.VITE_API_BASE_URL || 'https://i-edge-backend-7.onrender.com';
 
 
 /* =========================================================
