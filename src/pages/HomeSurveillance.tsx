@@ -1109,7 +1109,7 @@ export default function HomeSurveillancePage() {
       // -------------------------------------------------------
 
       const uploadResponse = await fetch(
-        `${API_BASE}/api/v1/surveillance/upload`,
+        `${API_BASE}/api/surveillance/upload`,
         {
           method: "POST",
           headers: getAuthHeaders(),
