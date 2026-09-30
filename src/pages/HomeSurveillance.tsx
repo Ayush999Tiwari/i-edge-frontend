@@ -1823,7 +1823,7 @@ export default function HomeSurveillancePage() {
 
         <div className="py-4">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/dashboard")}
             className="group flex items-center gap-2 text-sm font-medium hover:opacity-70 transition-opacity"
             style={{ color: C.inkSoft }}
           >
