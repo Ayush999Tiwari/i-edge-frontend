@@ -18,7 +18,6 @@ import ExploreUseCases from './pages/ExploreUseCases';
 import HomeSurveillance from './pages/HomeSurveillance';
 import VehicleSurveillanceUpload from './pages/VehicleSurveillanceUpload';
 
-
 /* =========================================================
    BACKEND URL
 
@@ -39,7 +38,6 @@ const API_BASE =
     }
   ).env?.VITE_API_BASE_URL || 'https://i-edge-backend-7.onrender.com';
 
-
 /* =========================================================
    PROTECTED ROUTE
 ========================================================= */
@@ -55,9 +53,20 @@ const ProtectedRoute = ({
     return <Navigate to="/login" replace />;
   }
 
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+
+    if (!payload.exp || payload.exp * 1000 <= Date.now()) {
+      localStorage.removeItem('iedge_token');
+      return <Navigate to="/login" replace />;
+    }
+  } catch {
+    localStorage.removeItem('iedge_token');
+    return <Navigate to="/login" replace />;
+  }
+
   return <>{children}</>;
 };
-
 
 /* =========================================================
    AUTH CALLBACK
@@ -123,7 +132,6 @@ const AuthCallback = () => {
       return;
     }
 
-
     /* =====================================================
        ERROR
     ===================================================== */
@@ -138,7 +146,6 @@ const AuthCallback = () => {
     });
 
   }, [navigate]);
-
 
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -157,7 +164,6 @@ const AuthCallback = () => {
   );
 };
 
-
 /* =========================================================
    APP
 ========================================================= */
@@ -167,7 +173,6 @@ function App() {
     useState(false);
 
   const navigate = useNavigate();
-
 
   /* =========================================================
      LOGIN
@@ -202,7 +207,6 @@ function App() {
 
       const data = await response.json();
 
-
       if (
         response.ok &&
         data.access_token
@@ -236,7 +240,6 @@ function App() {
     }
   };
 
-
   /* =========================================================
      REGISTER
 
@@ -265,7 +268,6 @@ function App() {
         password,
       };
 
-
       /* =====================================================
          EMAIL REGISTRATION
       ===================================================== */
@@ -278,7 +280,6 @@ function App() {
 
       }
 
-
       /* =====================================================
          PHONE REGISTRATION
       ===================================================== */
@@ -289,7 +290,6 @@ function App() {
           identifier.trim();
 
       }
-
 
       const response = await fetch(
         `${API_BASE}/api/v1/auth/register`,
@@ -304,9 +304,7 @@ function App() {
         }
       );
 
-
       const data = await response.json();
-
 
       /* =====================================================
          REGISTRATION SUCCESS
@@ -346,7 +344,6 @@ function App() {
 
       }
 
-
       /* =====================================================
          REGISTRATION ERROR
       ===================================================== */
@@ -374,7 +371,6 @@ function App() {
     }
   };
 
-
   /* =========================================================
      GOOGLE AUTH
   ========================================================= */
@@ -385,7 +381,6 @@ function App() {
       `${API_BASE}/api/v1/auth/google`;
   };
 
-
   /* =========================================================
      GITHUB AUTH
   ========================================================= */
@@ -395,7 +390,6 @@ function App() {
     window.location.href =
       `${API_BASE}/api/v1/auth/github`;
   };
-
 
   /* =========================================================
      ROUTES
@@ -423,7 +417,6 @@ function App() {
           }
         />
 
-
         {/* =================================================
             HOW IT WORKS
         ================================================= */}
@@ -432,7 +425,6 @@ function App() {
           path="/how-it-works"
           element={<HowItWorks />}
         />
-
 
         {/* =================================================
             EXPLORE USE CASES
@@ -443,7 +435,6 @@ function App() {
           element={<ExploreUseCases />}
         />
 
-
         {/* =================================================
             GOOGLE / GITHUB CALLBACK
         ================================================= */}
@@ -453,7 +444,6 @@ function App() {
           element={<AuthCallback />}
         />
 
-
         {/* =================================================
             ROOT
         ================================================= */}
@@ -462,12 +452,11 @@ function App() {
           path="/"
           element={
             <Navigate
-              to="/dashboard"
+              to="/login"
               replace
             />
           }
         />
-
 
         {/* =================================================
             DASHBOARD
@@ -482,7 +471,6 @@ function App() {
           }
         />
 
-
         {/* =================================================
             VEHICLE SURVEILLANCE
         ================================================= */}
@@ -496,7 +484,6 @@ function App() {
           }
         />
 
-
         {/* =================================================
             HOME SURVEILLANCE
         ================================================= */}
@@ -509,7 +496,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
 
         {/* =================================================
             CATCH ALL
