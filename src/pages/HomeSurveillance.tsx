@@ -633,6 +633,11 @@ export default function HomeSurveillancePage() {
   const [processedVideoUrl, setProcessedVideoUrl] =
     useState<string | null>(null);
 
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
+  const [liveStreamUrl, setLiveStreamUrl] = useState<string | null>(null);
+  const [liveEvents, setLiveEvents] = useState<any[]>([]);
+  const liveEventsRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
 
   // -------------------------------------------------------
@@ -663,6 +668,68 @@ export default function HomeSurveillancePage() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pageRef = useRef<HTMLDivElement>(null);
+
+  // -------------------------------------------------------
+  // LOW-LATENCY LIVE SURVEILLANCE
+  // -------------------------------------------------------
+
+  useEffect(() => {
+    if (!liveSessionId || processingState !== "processing") return;
+
+    const pollLiveEvents = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE}/api/surveillance/live/events/${liveSessionId}`,
+          { headers: getAuthHeaders() }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (Array.isArray(data.events) && data.events.length > 0) {
+          setLiveEvents((prev) => [...data.events, ...prev].slice(0, 50));
+
+          const latest = data.events[0];
+          setAnalyticsData((prev) => [
+            {
+              type: latest.event_type
+                ? latest.event_type.charAt(0).toUpperCase() + latest.event_type.slice(1)
+                : "Unknown",
+              confidence: latest.confidence,
+            },
+            ...prev,
+          ].slice(0, 20));
+        }
+
+        const status = data.status;
+
+        if (status?.finished && !status?.running) {
+          if (liveEventsRef.current) {
+            clearInterval(liveEventsRef.current);
+            liveEventsRef.current = null;
+          }
+
+          setUploadProgress(100);
+          setProcessingState("complete");
+        } else {
+          setUploadProgress((prev) => Math.min(prev + 1, 95));
+        }
+      } catch (error) {
+        console.error("[LIVE EVENTS] Error:", error);
+      }
+    };
+
+    pollLiveEvents();
+    liveEventsRef.current = setInterval(pollLiveEvents, 700);
+
+    return () => {
+      if (liveEventsRef.current) {
+        clearInterval(liveEventsRef.current);
+        liveEventsRef.current = null;
+      }
+    };
+  }, [liveSessionId, processingState]);
 
   // -------------------------------------------------------
   // POLLING LOGIC
@@ -1088,28 +1155,21 @@ export default function HomeSurveillancePage() {
     if (!file || !serviceRunning) return;
 
     setProcessingState("uploading");
-
     setUploadProgress(10);
-
     setErrorMessage("");
-
     setAlertEmail(null);
-
     setEmailAlertsSent(0);
-
     setEmailAlertStatus("pending");
+    setLiveEvents([]);
+    setAnalyticsData([]);
+    setProcessedVideoUrl(null);
 
     const formData = new FormData();
-
     formData.append("file", file);
 
     try {
-      // -------------------------------------------------------
-      // STEP 1: UPLOAD VIDEO
-      // -------------------------------------------------------
-
-      const uploadResponse = await fetch(
-        `${API_BASE}/api/surveillance/upload`,
+      const response = await fetch(
+        `${API_BASE}/api/surveillance/live/start`,
         {
           method: "POST",
           headers: getAuthHeaders(),
@@ -1117,89 +1177,37 @@ export default function HomeSurveillancePage() {
         }
       );
 
-      if (!uploadResponse.ok) {
-        let message = `Upload failed: ${uploadResponse.statusText}`;
+      if (!response.ok) {
+        let message = `Failed to start live surveillance: ${response.statusText}`;
 
         try {
-          const errorData = await uploadResponse.json();
-
-          if (errorData?.detail) {
-            message = errorData.detail;
-          }
+          const errorData = await response.json();
+          if (errorData?.detail) message = errorData.detail;
         } catch {
-          // Ignore JSON parsing error.
+          // Ignore JSON parsing errors.
         }
 
         throw new Error(message);
       }
 
-      const uploadData = await uploadResponse.json();
+      const data = await response.json();
+      const sessionId = data.session_id;
 
-      const newJobId = uploadData.id;
-
-      setJobId(newJobId);
-
-      // -------------------------------------------------------
-      // EMAIL DATA RETURNED DURING UPLOAD
-      // -------------------------------------------------------
-
-      if (
-        typeof uploadData.alert_email === "string" &&
-        uploadData.alert_email.trim()
-      ) {
-        setAlertEmail(uploadData.alert_email);
-
-        setEmailAlertStatus("pending");
-      } else {
-        setAlertEmail(null);
-
-        setEmailAlertStatus("unavailable");
+      if (!sessionId) {
+        throw new Error("Backend did not return a live session ID");
       }
 
-      setEmailAlertsSent(
-        Number(uploadData.email_alerts_sent || 0)
+      setLiveSessionId(sessionId);
+      setLiveStreamUrl(
+        `${API_BASE}/api/surveillance/live/stream/${sessionId}`
       );
-
-      setUploadProgress(50);
-
-      // -------------------------------------------------------
-      // STEP 2: TRIGGER DETECTION
-      // -------------------------------------------------------
-
-      const detectResponse = await fetch(
-        `${API_BASE}/api/surveillance/detect/${newJobId}`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(),
-        }
-      );
-
-      if (!detectResponse.ok) {
-        if (detectResponse.status !== 409) {
-          let message = `Detection trigger failed: ${detectResponse.statusText}`;
-
-          try {
-            const errorData = await detectResponse.json();
-
-            if (errorData?.detail) {
-              message = errorData.detail;
-            }
-          } catch {
-            // Ignore JSON parsing error.
-          }
-
-          throw new Error(message);
-        }
-      }
-
+      setUploadProgress(20);
       setProcessingState("processing");
     } catch (err: any) {
-      console.error("[UPLOAD] Error:", err);
-
+      console.error("[LIVE SURVEILLANCE] Error:", err);
       setProcessingState("failed");
-
       setErrorMessage(
-        err.message || "Failed to process video"
+        err.message || "Failed to start live surveillance"
       );
     }
   };
@@ -1218,6 +1226,22 @@ export default function HomeSurveillancePage() {
     setMessageIndex(0);
 
     setJobId(null);
+
+    if (liveEventsRef.current) {
+      clearInterval(liveEventsRef.current);
+      liveEventsRef.current = null;
+    }
+
+    if (liveSessionId) {
+      fetch(`${API_BASE}/api/surveillance/live/stop/${liveSessionId}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      }).catch(() => {});
+    }
+
+    setLiveSessionId(null);
+    setLiveStreamUrl(null);
+    setLiveEvents([]);
 
     setProcessedVideoUrl((currentUrl) => {
       if (currentUrl?.startsWith("blob:")) {
@@ -1823,7 +1847,7 @@ export default function HomeSurveillancePage() {
 
         <div className="py-4">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/")}
             className="group flex items-center gap-2 text-sm font-medium hover:opacity-70 transition-opacity"
             style={{ color: C.inkSoft }}
           >
@@ -2655,7 +2679,7 @@ export default function HomeSurveillancePage() {
                           </h3>
 
                           <p className="text-xs text-slate-500 font-mono">
-                            JOB ID: {jobId}
+                            LIVE SESSION: {liveSessionId || jobId || "—"}
                           </p>
                         </div>
                       </div>
@@ -2807,7 +2831,13 @@ export default function HomeSurveillancePage() {
                             borderColor: C.line,
                           }}
                         >
-                          {processedVideoUrl ? (
+                          {liveStreamUrl ? (
+                            <img
+                              src={liveStreamUrl}
+                              alt="Live AI surveillance stream"
+                              className="w-full aspect-video object-contain bg-black"
+                            />
+                          ) : processedVideoUrl ? (
                             <video
                               src={processedVideoUrl}
                               controls
